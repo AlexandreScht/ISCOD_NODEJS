@@ -15,5 +15,5 @@ db.on("open", () => {
 });
 
 server.listen(config.port, () => {
-  console.log("app running");
+  console.log(`app running on : localhost:${config.port}`);
 });
