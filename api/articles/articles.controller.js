@@ -5,7 +5,7 @@ const UnauthorizedError = require("../../errors/unauthorized");
 class ArticlesController {
   async create(req, res, next) {
     try {
-      const { user: { role }, body: data } = req
+      const { body: data } = req
       const article = await ArticleService.createArticle(data);
       req.io.emit("article:create", article);
       res.status(201).json(article);
