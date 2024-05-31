@@ -24,7 +24,6 @@ class ArticlesController {
 async update(req, res, next) {
   try {
     const { user: { role }, params: { id }, body: { title, content, status } } = req;
-    console.log(role);
     if (role !== "admin") {
       throw new UnauthorizedError();
     }
@@ -34,7 +33,6 @@ async update(req, res, next) {
       status,
     };
     const article = await ArticleService.updateArticle(id,articleData);
-    console.log(article);
     if (!article) {
       throw new NotFoundError();
     }
