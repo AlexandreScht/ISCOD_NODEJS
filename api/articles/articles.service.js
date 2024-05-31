@@ -7,11 +7,11 @@ class ArticleService {
   }
 
   async updateArticle(id, data) {
-    return Article.findByIdAndUpdate(id, data, { new: true });
+    return await Article.findOneAndUpdate({ _id: id }, data, { new: true });
   }
 
   async deleteArticle(id) {
-    return Article.deleteOne({ _id: id });
+    return Article.findByIdAndDelete(id);
   }
 
   async getArticlesByUser(userId) {

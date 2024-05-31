@@ -5,32 +5,46 @@ const UnauthorizedError = require("../../errors/unauthorized");
 class ArticlesController {
   async create(req, res, next) {
     try {
-      const { body: data } = req
-      const article = await ArticleService.createArticle(data);
+      const { user: { _id: userId },body: { title,content,status } } = req
+      const articleData = {
+        title,
+        content,
+        user: userId,
+        status
+      };
+
+      const article = await ArticleService.createArticle(articleData);
       req.io.emit("article:create", article);
       res.status(201).json(article);
     } catch (err) {
-      console.log(err);
       next(err);
     }
   }
 
-  async update(req, res, next) {
-    try {
-      const { user: { role }, params: { id }, body: data} = req
-      if (role !== "admin") {
-        throw new UnauthorizedError();
-      }
-      const article = await ArticleService.updateArticle(id, data);
-      if (!article) {
-        throw new NotFoundError();
-      }
-      req.io.emit("article:update", article);
-      res.json(article);
-    } catch (err) {
-      next(err);
+async update(req, res, next) {
+  try {
+    const { user: { role }, params: { id }, body: { title, content, status } } = req;
+    console.log(role);
+    if (role !== "admin") {
+      throw new UnauthorizedError();
     }
+    const articleData = {
+      title,
+      content,
+      status,
+    };
+    const article = await ArticleService.updateArticle(id,articleData);
+    console.log(article);
+    if (!article) {
+      throw new NotFoundError();
+    }
+    req.io.emit("article:update", article);
+    res.json(article);
+  } catch (err) {
+    next(err);
   }
+}
+
 
   async delete(req, res, next) {
     try {

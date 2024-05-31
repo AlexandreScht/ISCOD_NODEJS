@@ -1,72 +1,77 @@
 const request = require("supertest");
+const { app } = require("../server");
+const jwt = require("jsonwebtoken");
+const config = require("../config");
 const mockingoose = require("mockingoose");
-const express = require("express");
 const Article = require("../api/articles/articles.schema");
-const User = require("../api/users/users.model");
-const articlesRouter = require("../api/articles/articles.router");
-const authMiddleware = require("../middlewares/auth");
 
-const app = express();
-app.use(express.json());
-// Middleware pour moquer req.io
-app.use((req, res, next) => {
-  req.io = {
-    emit: jest.fn()
+describe("tester API users et articles", () => {
+  let token;
+  const USER_ID = '6659bffc24f00ee439a13b52';
+  const ARTICLE_ID = '6659c928fadc16f062903091';
+  const MOCK_USER = {
+    _id: USER_ID,
+    role: "admin",
   };
-  next();
-});
-app.use("/api/articles", articlesRouter);
 
-jest.mock("../middlewares/auth", () => jest.fn((req, res, next) => {
-  req.user = { _id: "66473c461cf0923c764e94e7", role: "admin" };
-  next();
-}));
+  const MOCK_ARTICLES = {
+    _id: ARTICLE_ID,
+    title: "New Article",
+    content: "Content of the new article",
+    user: USER_ID,
+  };
 
-describe("Articles API", () => {
+  const UPDATED_MOCK_ARTICLES = {
+    _id: ARTICLE_ID,
+    title: "New update Article",
+    content: "Edit of the new article",
+    status: "published",
+    user: USER_ID,
+  };
+
   beforeEach(() => {
-    mockingoose.resetAll();
+    token = jwt.sign(MOCK_USER,config.secretJwtToken);
+    mockingoose.resetAll()
+    mockingoose(Article).toReturn(MOCK_ARTICLES, "save");
+    mockingoose(Article).toReturn(UPDATED_MOCK_ARTICLES,'findOneAndUpdate')
+    mockingoose(Article).toReturn(UPDATED_MOCK_ARTICLES, "findByIdAndDelete");
   });
 
-  it("should create an article", async () => {
-    const articleData = {
-      user: '66473c461cf0923c764e94e7',
-      status: "draft"
-    };
-
-    mockingoose(Article).toReturn(articleData, "save");
-
-    const response = await request(app)
+  test("[Article] create an article", async () => {
+    const { status, body: { title, content, user, _id } } = await request(app)
       .post("/api/articles")
-      .send(articleData);
+      .set("x-access-token", token)
+      .send(MOCK_ARTICLES);
 
-    expect(response.status).toBe(201);
-    expect(response.body.status).toBe(articleData.status);
+    expect(status).toBe(201);
+    expect(title).toBe(MOCK_ARTICLES.title);
+    expect(content).toBe(MOCK_ARTICLES.content);
+    expect(user).toBe(USER_ID);
+    expect(_id).toBe(ARTICLE_ID);
   });
 
-  it("should update an article", async () => {
-    const articleId = "60c72c315f1b2c001c8e4e1e";
-    const updateData = {
-      status: "published"
-    };
+  test("[Article] update an article", async () => {
+    const { status, body: { title, content, user, _id } } = await request(app)
+      .put(`/api/articles/${ARTICLE_ID}`)
+      .set("x-access-token", token)
+      .send(UPDATED_MOCK_ARTICLES);
 
-    mockingoose(Article).toReturn(updateData, "findOneAndUpdate");
-
-    const response = await request(app)
-      .put(`/api/articles/${articleId}`)
-      .send(updateData);
-
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe(updateData.status);
+    expect(status).toBe(200);
+    expect(title).toBe(UPDATED_MOCK_ARTICLES.title);
+    expect(content).toBe(UPDATED_MOCK_ARTICLES.content);
+    expect(user).toBe(USER_ID);
+    expect(_id).toBe(ARTICLE_ID);
   });
 
-  it("should delete an article", async () => {
-    const articleId = "60c72c315f1b2c001c8e4e1e";
-
-    mockingoose(Article).toReturn(null, "deleteOne");
-
+  test("[Article] delete an article", async () => {
     const response = await request(app)
-      .delete(`/api/articles/${articleId}`);
+      .delete(`/api/articles/${ARTICLE_ID}`)
+      .set("x-access-token", token);
 
     expect(response.status).toBe(204);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 });

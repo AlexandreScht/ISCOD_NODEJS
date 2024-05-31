@@ -18,16 +18,22 @@ class UserService {
   delete(id) {
     return User.deleteOne({ _id: id });
   }
-  async checkPasswordUser(email, password) {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return false;
+  async checkPasswordUser(email,password) {
+    try {
+      const user = await User.findOne({ email }).lean();
+      if (!user) {
+        return false;
+      }
+      const bool = await bcrypt.compare(password, user.password);
+      if (!bool) {
+        return false;
+      }
+      delete user.password
+      return user;
+      
+    } catch (error) {
+      console.log(error);
     }
-    const bool = await bcrypt.compare(password, user.password);
-    if (!bool) {
-      return false;
-    }
-    return user;
   }
 }
 

@@ -80,12 +80,12 @@ class UsersController {
   }
   async login(req, res, next) {
     try {
-      const { email, password } = req.body;
+      const { email,password } = req.body;
       const User = await usersService.checkPasswordUser(email, password);
       if (!User) {
         throw new UnauthorizedError();
       }
-      const token = jwt.sign({ User }, config.secretJwtToken, {
+      const token = jwt.sign(User , config.secretJwtToken, {
         expiresIn: "3d",
       });
       res.json({
