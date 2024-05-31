@@ -11,6 +11,7 @@ describe("tester API users et articles", () => {
   const ARTICLE_ID = '6659c928fadc16f062903091';
   const MOCK_USER = {
     _id: USER_ID,
+    // member || admin
     role: "admin",
   };
 
